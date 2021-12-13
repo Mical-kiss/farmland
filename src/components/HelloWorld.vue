@@ -2,6 +2,7 @@
   <div class="hello">
     <h1>{{ msg }}</h1>
     <h1>可能是……</h1>
+    <h1>可能是……test</h1>
   </div>
 </template>
 
