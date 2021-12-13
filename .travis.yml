@@ -1,11 +1,8 @@
 language: node_js
 node_js:
-    - 10
-cache: yarn
-install:
-    - yarn
+    - 14
 script:
-    - yarn build
+    - npm run build
 after_success:
     - cd dist
     - git init
