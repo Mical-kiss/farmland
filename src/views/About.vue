@@ -153,25 +153,104 @@ class MyPromise {
     }
   }
 }
+new Promise((resolve) => {
+  setTimeout(() => { 
+    // resolve一个thenable对象，则会调用then方法并传递resolve
+    resolve({
+      then(resolve) {
+        resolve(3)
+        return 123
+      },
+      a: 222
+    })
+   }, 1000)
+}).then(res => {
+  console.log(111, res)
+})
+Promise.myResolve = function (value) {
+  if (value && typeof value === 'object' && (value instanceof Promise)) {
+    return value
+  }
+  return new Promise((resolve) => {
+    resolve(value)
+  })
+}
+Promise.myReject = function (value) {
+  return new Promise((_, reject) => {
+    reject(value)
+  })
+}
+Promise.myAll = function (promises) {
+  return new Promise((resolve, reject) => {
+    const len = promises.length
+    let count = 0
+    let result = []
+    promises.forEach((p, i) => {
+      Promise.resolve(p).then(res => {
+        count++
+        result[i] = res
+        if (count === len) resolve(resolve)
+      }).catch(reject)
+    })
+  })
+}
+Promise.allSettled = function (promises) {
+  return new Promise((resolve) => {
+    const len = promises.length
+    let count = 0
+    let result = []
+    promises.forEach((p, i) => {
+      Promise.resolve(p).then(res => {
+        count++
+        result[i] = {
+          status: 'fulfilled',
+          value: res
+        }
+      }).catch(err => {
+        count++
+        result[i] = {
+          status: 'rejected',
+          reason: err
+        }
+      }).finally(() => {
+        if (count === len) resolve(resolve)
+      })
+    })
+  })
+}
+Promise.myRace = function (promises) {
+  return new Promise((resolve, reject) => {
+    promises.forEach(p => {
+      Promise.resolve(p).then(resolve, reject)
+    })
+  })
+}
+const p4 = {
+  then (resolve) {
+    setTimeout(() => resolve(4), 1000)
+  }
+}
+console.log(Promise.myResolve(p4))
 
-/* reduce实现map */
 Array.prototype.map2 = function (callback, ctx = null) {
   if (typeof callback !== 'function') {
     throw('callback must be a function')
   }
-
   return this.reduce((result, cur, index, array) => {
-    return  result.concat(callback.call(ctx, cur, index, array))
+    return result.concat(callback.call(ctx, cur, index, array))
   }, [])
 }
+Array.prototype.map3 = function (callback, ctx = null) {
+  if (typeof callback !== 'function') {
+    throw('callback must be a function')
+  }
+  let newArr = []
+  for (let i; i < this.length; i++) {
+    newArr.push(callback.call(ctx, this[i], i, this))
+  }
+  return newArr
+}
 
-let arr = [ 1, 2 ]
-let arr2 = arr.map2(function (it, i, array) {
-  console.log(it, i, array, this)
-  return it * 2
-}, { name: '前端胖头鱼' })
-
-console.log(arr2) 
 
 export {
   debounce,
