@@ -117,7 +117,13 @@ class EventEmitter {
       })
     }
   }
-  once() {}
+  once(name, fn) {
+    function tmpFn () {
+      fn()
+      this.off(name, tmpFn)
+    }
+    this.on(name, tmpFn)
+  }
 }
 
 /* Promise */
