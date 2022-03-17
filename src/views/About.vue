@@ -14,6 +14,8 @@
 </template>
 
 <script>
+import { twoSum } from './about.js'
+console.log(100, twoSum([1, 2, 7, 4], 5))
 /* 节流 input框请求 */
 function debounce(fn, delay) {
   let timer = null
