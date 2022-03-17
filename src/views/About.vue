@@ -74,6 +74,25 @@ function limitRequest(urls= [], limit = 2) {
     }
   })
 }
+function promiseLimitExecute(limit = 2) {
+  const queueList = []
+  let taskNum = 0
+  return function (p) {
+    function fn () {
+      setTimeout(() => {
+        p()
+        taskNum--
+        if (taskNum < limit && queueList.length) queueList.unshift()()
+      }, 1000)
+    }
+    if (taskNum < limit) {
+      taskNum++
+      fn()
+    } else {
+      queueList.push(fn)
+    }
+  }
+}
 
 /* 数组去重 */
 function setArr(arr) {
@@ -110,10 +129,10 @@ class EventEmitter {
       })
     }
   }
-  emit(name) {
+  emit(name, ...rest) {
     if (this.cache[name]) {
       this.cache[name].forEach(item => {
-        item()
+        item.call(this, ...rest)
       })
     }
   }
@@ -233,7 +252,35 @@ const p4 = {
   }
 }
 console.log(Promise.myResolve(p4))
-
+/* new实现 */
+function myNew (fn, ...args) {
+  let obj = Object.create(fn.prototype)
+  let res = fn.call(obj, ...args)
+  if (res && (typeof res === 'object') || typeof res === 'function') {
+    return res
+  }
+  return obj
+}
+/* call, apply, bind实现 */
+Function.prototype.myCall = function (context, ...args) {
+  if (!context || context === null) context = window
+  let fn = Symbol()
+  context[fn] = this
+  return context[fn](...args)
+}
+Function.prototype.myApply = function (context, args) {
+  if (!context || context === null) context = window
+  let fn = Symbol()
+  context[fn] = this
+  return context[fn](...args)
+}
+Function.prototype.myBind = function (context, ...args) {
+  if (!context || context === null) context = window
+  let fn = Symbol()
+  context[fn] = this
+  
+}
+/* 数组map方法实现 */
 Array.prototype.map2 = function (callback, ctx = null) {
   if (typeof callback !== 'function') {
     throw('callback must be a function')
@@ -252,16 +299,46 @@ Array.prototype.map3 = function (callback, ctx = null) {
   }
   return newArr
 }
+/* setTimeout实现setInterval */
+function myTimeout(fn, t) {
+  let timer = null
+  function interval () {
+    fn()
+    timer = setTimeout(interval, t)
+  }
+  interval()
+  return {
+    cancel: () => {
+      clearTimeout(timer)
+    }
+  }
+}
 
+/* 数组扁平 */
+function flatter (arr) {
+  if (!arr.length) return
+  /* return arr.reduce((pre, cur) => {
+    Array.isArray(cur) ? [...pre, flatter(cur)] : [...pre, cur]
+  }, []) */
+  let tmpList = []
+  arr.forEach(item => {
+    tmpList = tmpList.concat(Array.isArray(item) ? flatter(item) : item)
+  })
+  return tmpList
+}
 
 export {
   debounce,
   throttle,
   deepClone,
   limitRequest,
+  promiseLimitExecute,
   setArr,
   EventEmitter,
-  MyPromise
+  MyPromise,
+  myNew,
+  myTimeout,
+  flatter
 }
 export default {
   data() {
