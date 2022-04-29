@@ -5,6 +5,7 @@
       <router-link to="/about">About</router-link>
     </div>
     <div>1</div>
+    <div>2</div>
     <router-view/>
   </div>
 </template>
