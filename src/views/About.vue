@@ -16,7 +16,7 @@
 <script>
 import { twoSum } from './about.js'
 console.log(100, twoSum([1, 2, 7, 4], 5))
-/* 节流 input框请求 */
+/* 防抖 input框请求 */
 function debounce(fn, delay) {
   let timer = null
   return function(...args) {
@@ -31,7 +31,7 @@ function debounce(fn, delay) {
 function throttle(fn, delay) {
   let last = 0
   return function(...args) {
-    let now = Date().now()
+    let now = Date.now()
     if (now - last > delay) {
       fn.apply(...args)
       last = now
@@ -40,7 +40,7 @@ function throttle(fn, delay) {
 }
 
 /* 深拷贝 */
-function deepClone(obj, cache = new WeakMap) {
+function deepClone(obj, cache = new WeakMap()) {
   if (obj === null || typeof obj !== 'object') return obj
   if (cache.get(obj)) return obj // 防止循环引用进入死循环
 
@@ -95,6 +95,29 @@ function promiseLimitExecute(limit = 2) {
 }
 
 /* 数组去重 */
+function uniqueArr (arr) {
+  let tmpObj = {}
+  return arr.filter(item => {
+    return tmpObj[item] ? false : tmpObj[item] = true
+  })
+}
+
+function uniqueArr1 (arr) {
+  // [1, 2, 3, 1, 1, 2]
+  var hash=[]
+  for (var i = 0; i < arr.length; i++) {
+    for (var j = i+1; j < arr.length; j++) {
+      if (arr[i] === arr[j]) {
+        ++i
+        j = i
+      }
+    }
+    hash.push(arr[i])
+  }
+  return hash;
+}
+
+/* 数组去重 */
 function setArr(arr) {
   let newArr = []
   arr.forEach(item => {
@@ -109,6 +132,7 @@ function setArr(arr) {
 // }
 // const params = Object.fromEntries(urlSearchParams)
 // console.log(params)
+
 
 /* 事件总线|发布订阅 */
 class EventEmitter {
@@ -137,7 +161,7 @@ class EventEmitter {
     }
   }
   once(name, fn) {
-    function tmpFn () {
+    const tmpFn = function() {
       fn()
       this.off(name, tmpFn)
     }
@@ -174,7 +198,7 @@ class MyPromise {
     }
   }
 }
-new Promise((resolve) => {
+/* new Promise((resolve) => {
   setTimeout(() => { 
     // resolve一个thenable对象，则会调用then方法并传递resolve
     resolve({
@@ -187,7 +211,7 @@ new Promise((resolve) => {
    }, 1000)
 }).then(res => {
   console.log(111, res)
-})
+}) */
 Promise.myResolve = function (value) {
   if (value && typeof value === 'object' && (value instanceof Promise)) {
     return value
@@ -210,7 +234,7 @@ Promise.myAll = function (promises) {
       Promise.resolve(p).then(res => {
         count++
         result[i] = res
-        if (count === len) resolve(resolve)
+        if (count === len) resolve(result)
       }).catch(reject)
     })
   })
@@ -234,7 +258,7 @@ Promise.allSettled = function (promises) {
           reason: err
         }
       }).finally(() => {
-        if (count === len) resolve(resolve)
+        if (count === len) resolve(result)
       })
     })
   })
@@ -252,7 +276,7 @@ const p4 = {
   }
 }
 console.log(Promise.myResolve(p4))
-/* new实现 */
+/* new实现 1、创建新对象 2、将新对象的__proto__指向构造函数的原型对象 3、将this指向这个新对象，并执行构造函数 4、返回这个新对象*/
 function myNew (fn, ...args) {
   let obj = Object.create(fn.prototype)
   let res = fn.call(obj, ...args)
@@ -261,6 +285,32 @@ function myNew (fn, ...args) {
   }
   return obj
 }
+
+/* 实现Object.create, 用于完善“组合式继承”的“寄生式组合继承” */
+Object.myCreate = function (proto) {
+  function F() {}
+  F.prototype = proto
+  return new F()
+}
+// subType.prototype = Object.create(superType.prototype)
+// subType.prototype.constructor = subType
+
+/* 实现instanceof */
+function myInstanceof (left, right) {
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    if (left === null) {
+      return false
+    }
+    if (left.__proto__ === right.prototype) {
+      return true
+    }
+    left = left.__proto__
+  }
+}
+
+/* Reflect对象上可以拿到语言内部的方法，如Reflect.defineProperty、Reflect.deleteProperty，并且无法定义的属性会返回false，让Object对象的操作从命令式完全转化为函数式 */
+
 /* call, apply, bind实现 */
 Function.prototype.myCall = function (context, ...args) {
   if (!context || context === null) context = window
@@ -289,6 +339,10 @@ Function.prototype.myBind = function (context, ...args) {
   }
   result.prototype = Object.create(this.prototype)
   return result
+  /* let self = this
+  return function (...args1) {
+    return self.apply(context, args.concat(args1))
+  } */
 }
 /* 数组map方法实现 */
 Array.prototype.map2 = function (callback, ctx = null) {
@@ -323,18 +377,99 @@ function myTimeout(fn, t) {
     }
   }
 }
-
 /* 数组扁平 */
 function flatter (arr) {
-  if (!arr.length) return
+  if (!arr.length) return []
   /* return arr.reduce((pre, cur) => {
-    Array.isArray(cur) ? [...pre, flatter(cur)] : [...pre, cur]
+    return Array.isArray(cur) ? [...pre, flatter(cur)] : [...pre, cur]
   }, []) */
   let tmpList = []
   arr.forEach(item => {
     tmpList = tmpList.concat(Array.isArray(item) ? flatter(item) : item)
   })
   return tmpList
+}
+
+/* lazyMan */
+class LazyMan {
+  constructor (name) {
+    this.tasks = []
+    const task = () => {
+      console.log(`Hi! This is ${name}`)
+      this.next()
+    }
+    this.tasks.push(task)
+    setTimeout(() => {
+      this.next()
+    }, 0)
+  }
+  next () {
+    const task = this.tasks.shift()
+    task && task()
+  }
+  sleep (time) {
+    this._sleepWrapper(time, false)
+    return this
+  }
+  _sleepWrapper (time, first) {
+    const task = () => {
+      setTimeout(() => {
+        this.next()
+      }, time)
+    }
+    if (first) {
+      this.tasks.unshift(task)
+    } else {
+      this.tasks.push(task)
+    }
+  }
+  eat (name) {
+    const task = () => {
+      console.log(`Eat ${name}`)
+      this.next()
+    }
+    this.tasks.push(task)
+    return this
+  }
+}
+// (new LazyMan('zwj')).sleep(1000).eat('full')
+
+/* 判断循环引用 */
+function cycleDetector (obj) {
+  const arr = [obj]
+  function cycleJudge(obj) {
+    const keys = Object.keys(obj)
+    return keys.some(item => {
+      if (typeof obj[item] === 'object' && obj[item] !== null) {
+        if (arr.includes(obj[item])) return true
+        arr.push(obj[item])
+        return cycleJudge(obj[item])
+      }
+    })
+  }
+  return cycleJudge(obj)
+}
+var obj = {
+    a: {},
+    b: 1
+}
+obj.a.c= obj
+console.log(cycleDetector(obj))
+
+/* 树形结构 */
+function transTree (data, pid) {
+  function getChildren(data, result, pid) {
+    for (const item of data) {
+      if (item.pid === pid) {
+        const newItem = {...item, children: []};
+        result.push(newItem);
+        getChildren(data, newItem.children, item.id);
+      }
+    }
+  }
+  const result = [];
+  getChildren(data, result, pid)
+  return result;
 }
 
 export {
@@ -348,7 +483,12 @@ export {
   MyPromise,
   myNew,
   myTimeout,
-  flatter
+  flatter,
+  uniqueArr,
+  uniqueArr1,
+  myInstanceof,
+  LazyMan,
+  transTree
 }
 export default {
   data() {
@@ -357,3 +497,6 @@ export default {
   created() {}
 }
 </script>
+
+<style lang="less" scoped>
+</style>
