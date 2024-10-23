@@ -16,6 +16,8 @@
 <script>
 import { twoSum } from './about.js'
 console.log(100, twoSum([1, 2, 7, 4], 5))
+
+
 /* 防抖 input框请求 */
 function debounce(fn, delay) {
   let timer = null
@@ -27,6 +29,7 @@ function debounce(fn, delay) {
     }, delay)
   }
 }
+
 /* 节流 滚动监听 */
 function throttle(fn, delay) {
   let last = 0
@@ -126,12 +129,12 @@ function setArr(arr) {
   return newArr
 }
 /* 参数解构 */
-// const urlSearchParams = new URLSearchParams('a=1&b=2').entries()
-// for (let i of urlSearchParams) {
-//   console.log(i)
-// }
-// const params = Object.fromEntries(urlSearchParams)
-// console.log(params)
+const urlSearchParams = new URLSearchParams('a=1&b=2').entries()
+for (let i of urlSearchParams) {
+  console.log(i)
+}
+const params = Object.fromEntries(urlSearchParams)
+console.log(params)
 
 
 /* 事件总线|发布订阅 */
@@ -287,6 +290,7 @@ function myNew (fn, ...args) {
 }
 
 /* 实现Object.create, 用于完善“组合式继承”的“寄生式组合继承” */
+/* 继承：子组件的原型对象及prototype属性，指向父组件的实例 */
 Object.myCreate = function (proto) {
   function F() {}
   F.prototype = proto
@@ -296,16 +300,20 @@ Object.myCreate = function (proto) {
 // subType.prototype.constructor = subType
 
 /* 实现instanceof */
-function myInstanceof (left, right) {
+function myInstanceof (target, right) {
   // eslint-disable-next-line no-constant-condition
-  while (true) {
-    if (left === null) {
+  if (typeof target !== "object" || target === null) return false;
+  if (typeof origin !== "function")
+    throw new TypeError("origin must be function");
+  let proto = Object.getPrototypeOf(target); // 相当于 proto = target.__proto__;
+  while (proto) {
+    if (proto === null) {
       return false
     }
-    if (left.__proto__ === right.prototype) {
+    if (proto === right.prototype) {
       return true
     }
-    left = left.__proto__
+    proto = Object.getPrototypeOf(proto)
   }
 }
 
@@ -330,6 +338,8 @@ Function.prototype.myBind = function (context, ...args) {
   context[fn] = this
   let _this = this
   const result = function (...innerArgs) {
+    // 但还有一个问题，bind 有以下一个特性：
+    // 一个绑定函数也能使用 new 操作符创建对象：这种行为就像把原函数当成构造器，提供的 this 值被忽略，同时调用时的参数被提供给模拟函数
     if (this instanceof _this === true) {
       this[fn] = _this
       this[fn](...[...args, ...innerArgs])
